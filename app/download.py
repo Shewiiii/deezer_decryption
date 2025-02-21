@@ -3,6 +3,7 @@ from app.chunked_input_stream import ChunkedInputStream
 from app.constants import EXTENSION
 from app.crypto import decrypt_chunk
 import logging
+from app.search import get_closest_string
 from typing import Union, Literal
 
 
@@ -10,14 +11,15 @@ class Download:
     def __init__(self):
         self.dz = Deezer()
 
-    def tracks(self, tracks_format: Literal['MP3_128', 'MP3_320', 'FLAC'], track_ids: list[Union[int, str]]) -> None:
-        track_apis: list = self.dz.get_tracks(track_ids).get('data', [])
+    def tracks(self, track_apis: list[dict], tracks_format: Literal['MP3_128', 'MP3_320', 'FLAC'] = 'FLAC') -> None:
         track_urls = self.dz.get_track_urls(
-            tracks_format, [track['TRACK_TOKEN'] for track in track_apis])
+            [track['TRACK_TOKEN'] for track in track_apis],
+            tracks_format
+        )
 
         for i in range(len(track_urls)):
-            input_ = ChunkedInputStream(track_ids[i], track_urls[i])
             api = track_apis[i]
+            input_ = ChunkedInputStream(api['SNG_ID'], track_urls[i])
             display_name = f"{api['ART_NAME']} - {api['SNG_TITLE']}"
 
             with open(f'{display_name}.{EXTENSION[tracks_format]}', 'wb') as file:
@@ -36,3 +38,13 @@ class Download:
                     file.write(chunk)
 
             logging.info(f"Downloaded {display_name}")
+
+    def track_from_query(self, query: str, tracks_format: Literal['MP3_128', 'MP3_320', 'FLAC'] = 'FLAC') -> None:
+        track_apis = self.dz.search(query)['TRACK']['data']
+        if not track_apis:
+            return
+        artist_track_strings = [f'{track_api['ART_NAME']} {track_api['SNG_TITLE']}'
+                                for track_api in track_apis]
+        i = get_closest_string(query, artist_track_strings)
+        track_api = track_apis[i]
+        self.tracks([track_api], tracks_format)

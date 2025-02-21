@@ -73,7 +73,17 @@ class Deezer:
     def can_stream_lossless(self) -> bool:
         return self.user_data["USER"]["OPTIONS"]["web_lossless"] or self.user_data["USER"]["OPTIONS"]["mobile_lossless"]
 
-    def get_track_urls(self, tracks_format: Literal['MP3_128', 'MP3_320', 'FLAC'], track_tokens: list) -> list[str]:
+    def search(self, query, index=0, limit=10, suggest=True, artist_suggest=True, top_tracks=True):
+        return self.gw_api_call('deezer.pageSearch', {
+            "query": query,
+            "start": index,
+            "nb": limit,
+            "suggest": suggest,
+            "artist_suggest": artist_suggest,
+            "top_tracks": top_tracks
+        })
+
+    def get_track_urls(self, track_tokens: list, tracks_format: Literal['MP3_128', 'MP3_320', 'FLAC']) -> list[str]:
         license_token = self.user_data["USER"]["OPTIONS"]["license_token"]
         if not license_token:
             return []
