@@ -18,13 +18,12 @@ class Deezer:
             rest={'HttpOnly': True}
         )
         self.session.cookies.set_cookie(cookie_obj)
-        self.api_token = None
         self.base_url = "http://www.deezer.com/ajax/gw-light.php"
         self.params = {}
-        self.get_api_token()
+        self.api_token = self.set_api_token()
         self.user_data = self.get_user_data()
 
-    def get_api_token(self) -> None:
+    def set_api_token(self) -> None:
         p = {
             'api_version': "1.0",
             'api_token': 'null',
@@ -35,7 +34,7 @@ class Deezer:
             params=p,
             headers=self.headers
         ).json()
-        self.api_token = response['results']['checkForm']
+        return response['results']['checkForm']
 
     def gw_api_call(
         self,
