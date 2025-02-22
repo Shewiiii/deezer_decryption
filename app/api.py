@@ -70,7 +70,8 @@ class Deezer:
         return self.gw_api_call('deezer.getUserData')
 
     def can_stream_lossless(self) -> bool:
-        return self.user_data["USER"]["OPTIONS"]["web_lossless"] or self.user_data["USER"]["OPTIONS"]["mobile_lossless"]
+        options = self.user_data["USER"]["OPTIONS"]
+        return options["web_lossless"] or options["mobile_lossless"]
 
     def search(self, query, index=0, limit=10, suggest=True, artist_suggest=True, top_tracks=True):
         return self.gw_api_call('deezer.pageSearch', {
@@ -86,7 +87,8 @@ class Deezer:
         license_token = self.user_data["USER"]["OPTIONS"]["license_token"]
         if not license_token:
             return []
-        if not self.can_stream_lossless() and tracks_format == 'FLAC':
+        # Cannot stream lossless => Free account (with 128kbps as the max mp3 bitrate)
+        if not self.can_stream_lossless() and tracks_format != "MP3_128":
             raise ValueError
 
         request = self.session.post(
